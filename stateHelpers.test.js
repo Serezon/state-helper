@@ -1,4 +1,9 @@
-import * as stateHelpers from './stateHelpers';
+import * as R from 'ramda';
+
+import { 
+  mergeByPath, mergeByPathWithConcat, mergeDeep, mergeDeepByPath,
+  mergeDeepByPathWithConcat, mergeDeepByPathWithConcatReverse, mergeIn,
+} from './stateHelpers';
 
 let state
 beforeEach(() => {
@@ -79,9 +84,36 @@ beforeEach(() => {
         },
       },
     },
+    user: {
+      name: 'John Doe',
+      age: 29,
+      phone: '0986536547',
+      status:  { message: 'Why am i here?', active: false },
+    },
+    isLoading: false,
   };
 });
+// For simplicity we're gonna assume that actions are payloads
+describe('mergeIn', () => {
+  it('should override single prop', () => {
+    const result = mergeIn(R.identity)(state, { isLoading: true });
 
-it('should return true', () => {
-  expect(true).toBeTruthy();
-});
+    state.isLoading = true;
+
+    expect(result).toEqual(state);
+  });
+
+  it('should override few props', () => {
+    const result = mergeIn(R.identity)(state, { messages: null, user: {} });
+
+    state = {
+      ...state,
+      messages: null,
+      user: {},
+    };
+
+    console.log(state)
+
+    expect(result).toEqual(state);
+  });
+})
