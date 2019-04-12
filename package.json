@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "babel": "^6.23.0",
+    "babel-jest": "^24.7.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "jest": "^24.7.1",
+    "ramda": "^0.26.1"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  }
+}
