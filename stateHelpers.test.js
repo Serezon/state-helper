@@ -1,8 +1,9 @@
 import * as R from 'ramda';
 
-import { 
+import {
   mergeByPath, mergeByPathWithConcat, mergeDeep, mergeDeepByPath,
   mergeDeepByPathWithConcat, mergeDeepByPathWithConcatReverse, mergeIn,
+  mergeByProp, mergeByPropWithConcat, mergeDeepByProp,
 } from './stateHelpers';
 
 let state
@@ -112,8 +113,16 @@ describe('mergeIn', () => {
       user: {},
     };
 
-    console.log(state)
-
     expect(result).toEqual(state);
   });
-})
+});
+
+describe('mergeByProp', () => {
+  it('should override providen property', () => {
+    const result = mergeByProp('messages', R.identity)(state, { count: 12 });
+
+    state.messages.count = 12;
+
+    expect(result).toEqual(state)
+  })
+});

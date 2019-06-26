@@ -1,5 +1,5 @@
 import {
-  over, lensPath, flip, mergeDeepRight, mergeDeepWith, mergeWith, mergeRight, compose, union,
+  over, lensPath, lensProp, flip, mergeDeepRight, mergeDeepWith, mergeWith, mergeRight, compose, union,
 } from 'ramda';
 
 const makeStateMerger = merger => getModifier => (state, action) => (
@@ -11,6 +11,9 @@ const makeStateMergerWithPath = merger => (path, getModifier) => (state, action)
 
 const mergeByPathWith = merger => (path, modifier, source) => (
   over(lensPath(path), flip(merger)(modifier), source)
+);
+const mergeByPropWith = merger => (prop, modifier, source) => (
+  over(lensProp(prop), flip(merger)(modifier), source)
 );
 const concatValues = (left, right) => (
   (Array.isArray(left) && Array.isArray(right) ? union(left, right) : right)
@@ -37,6 +40,31 @@ const concatValuesReverse = (left, right) => (
 */
 export const mergeIn = makeStateMerger(mergeRight);
 
+/* --- mergeByProp ---
+
+  Merges action with state by providen prop
+
+  Example:
+    state = { firstName: 'Vasya', age: 18, adress: { street: 'Sobornosty', home: '21', flat: 12 } }
+    action = { payload: { floor: 4 } }
+
+   @ In reducers
+    mergeByPath('adress', action => action.payload)
+
+   @ Result
+    state = {
+      firstName: 'Vasya',
+      age: 18,
+      adress: {
+        street: 'Sobornosty',
+        home: '21',
+        flat: 12,
+        floor: 4
+      }
+    }
+*/
+export const mergeByProp = makeStateMergerWithPath(mergeByPropWith(mergeRight));
+
 /* --- mergeByPath ---
 
   Merges action with state by providen path
@@ -46,7 +74,7 @@ export const mergeIn = makeStateMerger(mergeRight);
     action = { payload: { floor: 4 } }
 
    @ In reducers
-    mergeInPath(['adress'], action => action.payload)
+    mergeByPath(['adress'], action => action.payload)
 
    @ Result
     state = {
@@ -62,6 +90,33 @@ export const mergeIn = makeStateMerger(mergeRight);
 */
 export const mergeByPath = makeStateMergerWithPath(mergeByPathWith(mergeRight));
 
+/* --- mergeByPropWithConcat ---
+
+  Works as mergeByProp, but concat's array's instead of replacing them, saves only unique values
+
+  Example:
+  state = { firstName: 'Vasya', age: 18, adress: { street: 'Sobornosty', ids: [12, 33, 45] } }
+  action = { payload: { ids: [13, 77, 12], key: 17 } }
+
+  @ In reducers
+  mergeByPropWithConcat('adress', action => action.payload)
+
+  @ Result
+  state = {
+    firstName: 'Vasya',
+    age: 18,
+    adress: {
+      street: 'Sobornosty',
+      ids: [12, 33, 45, 13, 77],
+      key: 17
+    }
+  }
+*/
+export const mergeByPropWithConcat = makeStateMergerWithPath(compose(
+  mergeByPropWith,
+  mergeWith,
+)(concatValues));
+
 /* --- mergeByPathWithConcat ---
 
   Works as mergeByPath, but concat's array's instead of replacing them, saves only unique values
@@ -71,7 +126,7 @@ export const mergeByPath = makeStateMergerWithPath(mergeByPathWith(mergeRight));
   action = { payload: { ids: [13, 77, 12], key: 17 } }
 
   @ In reducers
-  mergeInPath(['adress'], action => action.payload)
+  mergeByPathWithConcat(['adress'], action => action.payload)
 
   @ Result
   state = {
@@ -79,7 +134,8 @@ export const mergeByPath = makeStateMergerWithPath(mergeByPathWith(mergeRight));
     age: 18,
     adress: {
       street: 'Sobornosty',
-      ids: [12, 33, 45, 13, 77]
+      ids: [12, 33, 45, 13, 77],
+      key: 17
     }
   }
 */
@@ -111,6 +167,68 @@ export const mergeByPathWithConcat = makeStateMergerWithPath(compose(
     }
 */
 export const mergeDeep = makeStateMerger(mergeDeepRight);
+
+/* --- mergeDeepByProp ---
+
+  Merges action deep in state by providen prop
+
+  Example:
+    state = {
+      firstName: 'Vasya',
+      age: 18,
+      friends: {
+        'Galya': {
+          age: 22,
+          phone: 0998283271,
+          status: { message: 'Hello' }
+        },
+        'Petya': {
+          age: 17,
+          phone: null,
+          status: { message: 'Whatsup' }
+        },
+        'Serhii': {
+          age: 21,
+          phone: 0957566595,
+          status: { message: 'Spearhead' }
+        },
+      }
+    }
+    action = {
+      payload: {
+       'Serhii': {
+          status: { message: 'Avanga' }
+        }
+      }
+    }
+
+   @ In reducers
+    mergeDeepByProp('friends', ({ payload }) => payload)
+
+   @ Result
+    state = {
+      firstName: 'Vasya',
+      age: 18,
+      friends: {
+        'Galya': {
+          age: 22,
+          phone: 0998283271,
+          status: { message: 'Hello' }
+        },
+        'Petya': {
+          age: 17,
+          phone: null,
+          status: { message: 'Whatsup' }
+        },
+        'Serhii': {
+          age: 21,
+          phone: 0957566595,
+          status: { message: 'Avanga' }
+        },
+      }
+    }
+*/
+export const mergeDeepByProp = makeStateMergerWithPath(mergeByPropWith(mergeDeepRight));
 
 /* --- mergeDeepByPath ---
 
@@ -147,7 +265,7 @@ export const mergeDeep = makeStateMerger(mergeDeepRight);
     }
 
    @ In reducers
-    mergeDeepInPath(['friends'], ({ payload }) => payload)
+    mergeDeepByPath(['friends'], ({ payload }) => payload)
 
    @ Result
     state = {
@@ -204,7 +322,7 @@ export const mergeDeepByPath = makeStateMergerWithPath(mergeByPathWith(mergeDeep
   }
 
   @ In reducers
-  mergeDeepInPath(['friends'], ({ payload }) => payload)
+  mergeDeepByPath(['friends'], ({ payload }) => payload)
 
   @ Result
   state = {
@@ -259,7 +377,7 @@ export const mergeDeepByPathWithConcat = makeStateMergerWithPath(compose(
   }
 
   @ In reducers
-  mergeDeepInPath(['friends'], ({ payload }) => payload)
+  mergeDeepByPath(['friends'], ({ payload }) => payload)
 
   @ Result
   state = {
